@@ -1,4 +1,4 @@
-# neovim-ide-setup
+b7XrACQ*9pwX46HK# neovim-ide-setup
 
 一键安装 Neovim IDE 开发环境（macOS ARM64）。
 

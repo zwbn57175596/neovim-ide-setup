@@ -9,7 +9,7 @@
 - **平台**: macOS (ARM64)
 - **编辑器**: Neovim 0.12+ (基于 NormalNvim 发行版)
 - **插件管理**: lazy.nvim
-- **核心语言**: Java 17, Node.js, Python
+- **核心语言**: Java, Node.js, Python
 - **AI 辅助**: Claude Code CLI + avante.nvim
 
 ## 设计原则

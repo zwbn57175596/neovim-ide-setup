@@ -275,34 +275,58 @@ return {
     name = "ai-enhance-keymaps",
     lazy = false,
     config = function()
-      -- ── Fix: jdtls not starting on first Java file open ───────────────
-      -- lspconfig.jdtls.setup() is called inside a FileType autocmd in
-      -- 3-dev-core.lua, which only registers future autocmds. The current
-      -- buffer's FileType event has already fired, so we re-trigger it via
-      -- vim.schedule (after all sync callbacks complete).
-      vim.api.nvim_create_autocmd("FileType", {
-        pattern = "java",
-        callback = function()
-          vim.schedule(function()
-            if #vim.lsp.get_clients({ name = "jdtls", bufnr = 0 }) == 0 then
-              vim.api.nvim_exec_autocmds("FileType", {
-                pattern = "java",
-                modeline = false,
-              })
-            end
-          end)
+      -- ── Keep DAP UI open after program exits ────────────────────────────
+      -- 4-dev.lua auto-closes dapui on event_terminated/event_exited,
+      -- which hides console output. Override after dapui finishes setup.
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "LazyLoad",
+        callback = function(args)
+          if args.data == "nvim-dap-ui" then
+            -- vim.schedule: run after the plugin's config function completes
+            vim.schedule(function()
+              local ok, dap = pcall(require, "dap")
+              if ok then
+                dap.listeners.before.event_terminated["dapui_config"] = nil
+                dap.listeners.before.event_exited["dapui_config"] = nil
+              end
+            end)
+            return true -- remove this autocmd
+          end
         end,
       })
 
-      -- ── Auto-load .vscode/launch.json for DAP ─────────────────────────
-      vim.api.nvim_create_autocmd("FileType", {
-        pattern = "java",
+      -- ── Fix: jdtls not starting on first Java file open ───────────────
+      -- nvim-java lazy-loads on ft=java, but by the time it calls
+      -- lspconfig.jdtls.setup(), the current buffer's FileType event has
+      -- already fired. vim.lsp.enable() (Neovim 0.12+) attaches jdtls to
+      -- all matching buffers immediately, bypassing the autocmd race.
+      vim.lsp.enable("jdtls")
+
+      -- ── Auto-register Java DAP config when jdtls attaches ─────────────
+      vim.api.nvim_create_autocmd("LspAttach", {
         once = true,
-        callback = function()
-          local ok, vscode = pcall(require, "dap.ext.vscode")
-          if ok then
-            vscode.load_launchjs(nil, { java = { "java" } })
+        callback = function(args)
+          local client = vim.lsp.get_client_by_id(args.data.client_id)
+          if not client or client.name ~= "jdtls" then return true end -- retry for next attach
+          local java_ok, java = pcall(require, "java")
+          if not java_ok or not java.dap then return end
+          -- Poll until java-debug extension registers its commands
+          local attempts = 0
+          local function try_config_dap()
+            attempts = attempts + 1
+            local cmds = vim.tbl_get(client, "server_capabilities", "executeCommandProvider", "commands") or {}
+            for _, cmd in ipairs(cmds) do
+              if cmd == "vscode.java.resolveMainClass" then
+                java.dap.config_dap()
+                -- Also load .vscode/launch.json if present
+                local vscode_ok, vscode = pcall(require, "dap.ext.vscode")
+                if vscode_ok then vscode.load_launchjs(nil, { java = { "java" } }) end
+                return
+              end
+            end
+            if attempts < 20 then vim.defer_fn(try_config_dap, 500) end
           end
+          try_config_dap()
         end,
       })
 
