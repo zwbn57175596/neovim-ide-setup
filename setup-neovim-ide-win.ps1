@@ -503,3 +503,141 @@ if (Test-Path $queryPredicates) {
 } else {
     Log-Warning "nvim-treesitter query_predicates.lua not found"
 }
+
+# ==============================================================================
+# Module 8: TreeSitter Parser Installation (Interactive)
+# ==============================================================================
+Log-Section "Module 8: TreeSitter Parser Installation"
+
+Write-Host "Please manually install TreeSitter parsers in Neovim:" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Run this command in Neovim:" -ForegroundColor Yellow
+Write-Host ":TSInstall java javascript typescript python lua bash json yaml toml html css markdown" -ForegroundColor Blue
+Write-Host ""
+Write-Host "Or execute in terminal:" -ForegroundColor Yellow
+Write-Host 'nvim -c "TSInstall java javascript typescript python lua bash json yaml toml html css markdown" -c qa' -ForegroundColor Blue
+Write-Host ""
+Read-Host "Press Enter after installing TreeSitter parsers... "
+
+# ==============================================================================
+# Module 9: Mason Installation
+# ==============================================================================
+Log-Section "Module 9: Installing Mason Tools"
+
+Log-Info "Installing LSP servers and debug adapters via Mason..."
+$masonArgs = @(
+    '--headless',
+    '-c', 'MasonInstall lua-language-server typescript-language-server pyright jdtls java-debug-adapter java-test debugpy js-debug-adapter codelldb bash-debug-adapter lombok-nightly spring-boot-tools',
+    '-c', 'sleep 30',
+    '-c', 'qa'
+)
+$proc = Start-Process -FilePath "nvim" -ArgumentList $masonArgs `
+    -NoNewWindow -PassThru -RedirectStandardError "$env:TEMP\nvim-mason.log"
+if (-not $proc.WaitForExit(300000)) {
+    $proc.Kill()
+    Log-Warning "Mason installation timed out after 5 minutes"
+} else {
+    Log-Success "Mason installation completed"
+}
+
+# ==============================================================================
+# Module 10: Health Check
+# ==============================================================================
+Log-Section "Module 10: Health Check"
+
+Log-Info "Running Neovim health check..."
+Write-Host ""
+
+$healthLog = "$env:TEMP\nvim-healthcheck.log"
+$proc = Start-Process -FilePath "nvim" -ArgumentList '--headless', '-c', 'checkhealth', '-c', 'qa' `
+    -NoNewWindow -PassThru -RedirectStandardOutput $healthLog -RedirectStandardError "$env:TEMP\nvim-health-err.log"
+if (-not $proc.WaitForExit(60000)) {
+    $proc.Kill()
+    Log-Warning "Health check timed out"
+} else {
+    if (Test-Path $healthLog) {
+        $errors = Get-Content $healthLog | Select-String -Pattern "ERROR|WARNING|error|warning" | Select-Object -First 20
+        if ($errors) {
+            $errors | ForEach-Object { Write-Host $_.Line }
+        } else {
+            Log-Success "Health check passed - no errors detected"
+        }
+    }
+}
+
+# ==============================================================================
+# Module 11: Summary and Quick Reference
+# ==============================================================================
+Log-Section "Module 11: Setup Complete!"
+
+Write-Host "✓ Neovim IDE setup completed successfully!" -ForegroundColor Green
+Write-Host ""
+
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host "Quick Reference - Keyboard Shortcuts:" -ForegroundColor Yellow
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host ""
+
+Write-Host "AI Shortcuts (Claude Code):" -ForegroundColor Yellow
+Write-Host "  <leader>ac  - Open Claude Code in float window" -ForegroundColor Blue
+Write-Host "  <leader>av  - Open Claude Code in vertical split" -ForegroundColor Blue
+Write-Host ""
+
+Write-Host "Java Development:" -ForegroundColor Yellow
+Write-Host "  <leader>jo  - Run Java Application" -ForegroundColor Blue
+Write-Host "  <leader>js  - Stop Java Application" -ForegroundColor Blue
+Write-Host "  <leader>jt  - Test Current Method" -ForegroundColor Blue
+Write-Host "  <leader>jT  - Test Current Class" -ForegroundColor Blue
+Write-Host "  <leader>jD  - Config DAP (debug regular app, then <F5>)" -ForegroundColor Blue
+Write-Host "  <leader>jd  - Debug Test Method" -ForegroundColor Blue
+Write-Host "  <leader>jp  - Open Java Profiler" -ForegroundColor Blue
+Write-Host ""
+
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host "Configuration Files:" -ForegroundColor Yellow
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host ""
+
+Write-Host "  Main Config:       $nvimConfigDir\init.lua" -ForegroundColor Blue
+Write-Host "  AI Enhancement:   $aiEnhanceFile" -ForegroundColor Blue
+Write-Host "  Backup Location:  $env:LOCALAPPDATA\nvim.bak.*" -ForegroundColor Blue
+Write-Host ""
+
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host "Next Steps:" -ForegroundColor Yellow
+Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan
+Write-Host ""
+
+Write-Host "  1. Set your Anthropic API key:" -ForegroundColor White
+Write-Host '     $env:ANTHROPIC_API_KEY = "your-key-here"' -ForegroundColor Blue
+Write-Host '     # Persist across sessions:' -ForegroundColor Cyan
+Write-Host '     [Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "your-key-here", "User")' -ForegroundColor Blue
+Write-Host ""
+
+Write-Host "  2. Set JAVA_HOME to your project's JDK (any version):" -ForegroundColor White
+Write-Host '     $env:JAVA_HOME = "C:\path\to\jdk"' -ForegroundColor Blue
+Write-Host '     # Or if installed via Scoop: $env:JAVA_HOME = "$env:USERPROFILE\scoop\apps\temurin17-jdk\current"' -ForegroundColor Blue
+Write-Host "     Note: nvim-java auto-manages a separate JDK for JDTLS —" -ForegroundColor Cyan
+Write-Host "     JAVA_HOME only affects your project compile/run toolchain." -ForegroundColor Cyan
+Write-Host ""
+
+Write-Host "  3. Java debug workflow:" -ForegroundColor White
+Write-Host "     <leader>jD  Config DAP  →  <F9>  Set breakpoint  →  <F5>  Start debug" -ForegroundColor Blue
+Write-Host ""
+
+Write-Host "  4. Launch Neovim:" -ForegroundColor White
+Write-Host "     nvim" -ForegroundColor Blue
+Write-Host ""
+
+Write-Host "  5. Verify setup with health check:" -ForegroundColor White
+Write-Host "     :checkhealth" -ForegroundColor Blue
+Write-Host ""
+
+Write-Host "  6. Install additional TreeSitter parsers as needed:" -ForegroundColor White
+Write-Host "     :TSInstall <language>" -ForegroundColor Blue
+Write-Host ""
+
+Write-Host "Happy coding!" -ForegroundColor Green
+Write-Host ""
+
+exit 0
