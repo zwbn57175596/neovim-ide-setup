@@ -144,3 +144,303 @@ if ($buckets -notmatch "nerd-fonts") {
     scoop bucket add nerd-fonts
 }
 Install-ScoopPackage "JetBrainsMono-NF"
+
+# ==============================================================================
+# Module 4: Neovim Configuration
+# ==============================================================================
+Log-Section "Module 4: Setting Up Neovim Configuration"
+
+$nvimConfigDir = "$env:LOCALAPPDATA\nvim"
+$backupTimestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+
+if (Test-Path $nvimConfigDir) {
+    Log-Warning "Found existing Neovim config at $nvimConfigDir"
+    $backupDir = "$env:LOCALAPPDATA\nvim.bak.$backupTimestamp"
+    Log-Info "Backing up to $backupDir..."
+    Copy-Item -Path $nvimConfigDir -Destination $backupDir -Recurse
+    Log-Success "Backup created at $backupDir"
+} else {
+    Log-Info "Cloning NormalNvim configuration..."
+    git clone https://github.com/NormalNvim/NormalNvim.git $nvimConfigDir
+    Log-Success "NormalNvim cloned to $nvimConfigDir"
+}
+
+# ==============================================================================
+# Module 5: Write 5-ai-enhance.lua
+# ==============================================================================
+Log-Section "Module 5: Writing AI Enhancement Configuration"
+
+$pluginsDir = "$nvimConfigDir\lua\plugins"
+if (-not (Test-Path $pluginsDir)) {
+    New-Item -ItemType Directory -Path $pluginsDir -Force | Out-Null
+}
+
+$aiEnhanceFile = "$pluginsDir\5-ai-enhance.lua"
+Log-Info "Creating $aiEnhanceFile..."
+
+$luaContent = @'
+-- AI & IDE Enhancement
+local utils = require("base.utils")
+local is_available = utils.is_available
+
+return {
+
+  -- FIX: vim-matchup treesitter broken on Neovim 0.12
+  {
+    "nvim-treesitter/nvim-treesitter",
+    opts = {
+      matchup = {
+        enable = false,
+      },
+    },
+  },
+
+  -- avante.nvim
+  {
+    "yetone/avante.nvim",
+    event = "VeryLazy",
+    version = false,
+    build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "MunifTanjim/nui.nvim",
+      "nvim-treesitter/nvim-treesitter",
+    },
+    opts = {
+      provider = "claude",
+      providers = {
+        claude = {
+          endpoint = "https://api.anthropic.com",
+          model = "claude-sonnet-4-20250514",
+          timeout = 30000,
+          extra_request_body = {
+            temperature = 0.7,
+            max_tokens = 8192,
+          },
+        },
+      },
+      behaviour = {
+        auto_suggestions = false,
+        auto_set_highlight_group = true,
+        auto_set_keymaps = true,
+      },
+      windows = {
+        position = "right",
+        width = 35,
+        sidebar_header = {
+          align = "center",
+          rounded = true,
+        },
+      },
+    },
+  },
+
+  -- mason-lspconfig ensure_installed
+  {
+    "mason-org/mason-lspconfig.nvim",
+    opts = {
+      ensure_installed = {
+        "lua_ls",
+        "ts_ls",
+        "pyright",
+      },
+    },
+  },
+
+  -- mason-nvim-dap ensure_installed
+  {
+    "jay-babu/mason-nvim-dap.nvim",
+    opts = {
+      ensure_installed = {
+        "python",
+        "js",
+        "codelldb",
+        "bash",
+      },
+    },
+  },
+
+  -- Keymaps (Claude Code + Java + which-key)
+  {
+    dir = vim.fn.stdpath("config"),
+    name = "ai-enhance-keymaps",
+    lazy = false,
+    config = function()
+      -- ── Keep DAP UI open after program exits ────────────────────────────
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "LazyLoad",
+        callback = function(args)
+          if args.data == "nvim-dap-ui" then
+            vim.schedule(function()
+              local ok, dap = pcall(require, "dap")
+              if ok then
+                dap.listeners.before.event_terminated["dapui_config"] = nil
+                dap.listeners.before.event_exited["dapui_config"] = nil
+              end
+            end)
+            return true
+          end
+        end,
+      })
+
+      -- ── Fix: jdtls not starting on first Java file open ───────────────
+      vim.lsp.enable("jdtls")
+
+      -- ── Auto-register Java DAP config when jdtls attaches ─────────────
+      vim.api.nvim_create_autocmd("LspAttach", {
+        once = true,
+        callback = function(args)
+          local client = vim.lsp.get_client_by_id(args.data.client_id)
+          if not client or client.name ~= "jdtls" then return true end
+          local java_ok, java = pcall(require, "java")
+          if not java_ok or not java.dap then return end
+          local attempts = 0
+          local function try_config_dap()
+            attempts = attempts + 1
+            local cmds = vim.tbl_get(client, "server_capabilities", "executeCommandProvider", "commands") or {}
+            for _, cmd in ipairs(cmds) do
+              if cmd == "vscode.java.resolveMainClass" then
+                java.dap.config_dap()
+                local vscode_ok, vscode = pcall(require, "dap.ext.vscode")
+                if vscode_ok then vscode.load_launchjs(nil, { java = { "java" } }) end
+                return
+              end
+            end
+            if attempts < 20 then vim.defer_fn(try_config_dap, 500) end
+          end
+          try_config_dap()
+        end,
+      })
+
+      -- Claude Code float terminal
+      vim.keymap.set("n", "<leader>ac", function()
+        if not is_available("toggleterm.nvim") then
+          vim.notify("toggleterm.nvim not available", vim.log.levels.WARN)
+          return
+        end
+        local Terminal = require("toggleterm.terminal").Terminal
+        local claude_float = Terminal:new({
+          cmd = "claude",
+          direction = "float",
+          float_opts = {
+            border = "rounded",
+            width = function() return math.floor(vim.o.columns * 0.85) end,
+            height = function() return math.floor(vim.o.lines * 0.85) end,
+          },
+          on_open = function(term)
+            vim.api.nvim_buf_set_keymap(term.bufnr, "t", "<Esc>", "<C-\\><C-n>", { noremap = true })
+          end,
+        })
+        claude_float:toggle()
+      end, { desc = "Claude Code (float)" })
+
+      -- Claude Code vertical terminal
+      vim.keymap.set("n", "<leader>av", function()
+        if not is_available("toggleterm.nvim") then
+          vim.notify("toggleterm.nvim not available", vim.log.levels.WARN)
+          return
+        end
+        local Terminal = require("toggleterm.terminal").Terminal
+        local claude_vsplit = Terminal:new({
+          cmd = "claude",
+          direction = "vertical",
+          size = function() return math.floor(vim.o.columns * 0.4) end,
+          on_open = function(term)
+            vim.api.nvim_buf_set_keymap(term.bufnr, "t", "<Esc>", "<C-\\><C-n>", { noremap = true })
+          end,
+        })
+        claude_vsplit:toggle()
+      end, { desc = "Claude Code (vertical)" })
+
+      -- Java keymaps
+      vim.api.nvim_create_autocmd("FileType", {
+        desc = "Java IDE keymaps",
+        pattern = "java",
+        callback = function(args)
+          local bufnr = args.buf
+          local map = function(keys, func, desc)
+            vim.keymap.set("n", keys, func, { buffer = bufnr, desc = "Java: " .. desc })
+          end
+          map("<leader>jo", function()
+            local ok, java = pcall(require, "java")
+            if ok and java.runner then java.runner.built_in.run_app({})
+            else vim.notify("nvim-java runner not available", vim.log.levels.WARN) end
+          end, "Run App")
+          map("<leader>js", function()
+            local ok, java = pcall(require, "java")
+            if ok and java.runner then java.runner.built_in.stop_app()
+            else vim.notify("nvim-java runner not available", vim.log.levels.WARN) end
+          end, "Stop App")
+          map("<leader>jt", function()
+            local ok, java = pcall(require, "java")
+            if ok and java.test then java.test.run_current_method()
+            else vim.notify("nvim-java test not available", vim.log.levels.WARN) end
+          end, "Test Method")
+          map("<leader>jT", function()
+            local ok, java = pcall(require, "java")
+            if ok and java.test then java.test.run_current_class()
+            else vim.notify("nvim-java test not available", vim.log.levels.WARN) end
+          end, "Test Class")
+          map("<leader>jD", function()
+            local ok, java = pcall(require, "java")
+            if not ok or not java.dap then
+              vim.notify("nvim-java dap not available", vim.log.levels.WARN)
+              return
+            end
+            local attempts = 0
+            local function try_config_dap()
+              attempts = attempts + 1
+              local client = vim.lsp.get_clients({ name = "jdtls", bufnr = 0 })[1]
+              if client then
+                local cmds = vim.tbl_get(client, "server_capabilities", "executeCommandProvider", "commands") or {}
+                for _, cmd in ipairs(cmds) do
+                  if cmd == "vscode.java.resolveMainClass" then
+                    java.dap.config_dap()
+                    return
+                  end
+                end
+              end
+              if attempts >= 20 then
+                vim.notify("Timed out waiting for java-debug extension (10s)", vim.log.levels.WARN)
+                return
+              end
+              vim.defer_fn(try_config_dap, 500)
+            end
+            vim.notify("Waiting for java-debug extension...", vim.log.levels.INFO)
+            try_config_dap()
+          end, "Config DAP (debug app)")
+          map("<leader>jd", function()
+            local ok, java = pcall(require, "java")
+            if ok and java.test then java.test.debug_current_method()
+            else vim.notify("nvim-java test not available", vim.log.levels.WARN) end
+          end, "Debug Test Method")
+          map("<leader>jp", function()
+            local ok, java = pcall(require, "java")
+            if ok and java.profile then java.profile.ui()
+            else vim.notify("nvim-java profile not available", vim.log.levels.WARN) end
+          end, "Profile")
+        end,
+      })
+
+      -- which-key groups
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "BaseDefered",
+        once = true,
+        callback = function()
+          local wk_ok, wk = pcall(require, "which-key")
+          if wk_ok then
+            wk.add({
+              { "<leader>a", group = " AI" },
+              { "<leader>j", group = " Java" },
+            })
+          end
+        end,
+      })
+    end,
+  },
+
+}
+'@
+
+Set-Content -Path $aiEnhanceFile -Value $luaContent -Encoding UTF8
+Log-Success "AI enhancement configuration written to $aiEnhanceFile"
