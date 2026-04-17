@@ -444,3 +444,62 @@ return {
 
 Set-Content -Path $aiEnhanceFile -Value $luaContent -Encoding UTF8
 Log-Success "AI enhancement configuration written to $aiEnhanceFile"
+
+# ==============================================================================
+# Module 6: First Launch - Install Plugins
+# ==============================================================================
+Log-Section "Module 6: Installing Lazy Plugins (Headless)"
+
+Log-Info "Launching Neovim to install plugins (this may take a moment)..."
+$proc = Start-Process -FilePath "nvim" -ArgumentList '--headless', '"+Lazy! sync"', '+qa' `
+    -NoNewWindow -PassThru -RedirectStandardError "$env:TEMP\nvim-lazy-sync.log"
+if (-not $proc.WaitForExit(300000)) {
+    $proc.Kill()
+    Log-Warning "Plugin installation timed out after 5 minutes"
+} else {
+    Log-Success "Plugin installation completed"
+}
+
+# ==============================================================================
+# Module 7: Patching aerial.nvim for Neovim 0.12 Compatibility
+# ==============================================================================
+Log-Section "Module 7: Patching aerial.nvim for Neovim 0.12 Compatibility"
+
+$aerialHelpers = "$env:LOCALAPPDATA\nvim-data\lazy\aerial.nvim\lua\aerial\backends\treesitter\helpers.lua"
+
+if (Test-Path $aerialHelpers) {
+    Log-Info "Patching aerial.nvim helpers.lua..."
+    $content = Get-Content $aerialHelpers -Raw
+
+    $content = $content -replace `
+        'local row, col = start_node:start\(\)', `
+        'local row, col = start_node:range()'
+    Log-Success "Patched node:start() -> node:range()"
+
+    $content = $content -replace `
+        'local end_row, end_col = end_node:end_\(\)', `
+        'local _, _, end_row, end_col = end_node:range()'
+    Log-Success "Patched node:end_() -> node:range()"
+
+    Set-Content -Path $aerialHelpers -Value $content -NoNewline -Encoding UTF8
+} else {
+    Log-Warning "aerial.nvim not found at $aerialHelpers (may not be installed yet)"
+}
+
+# Patch: nvim-treesitter query_predicates.lua for Neovim 0.12.1
+$queryPredicates = "$env:LOCALAPPDATA\nvim-data\lazy\nvim-treesitter\lua\nvim-treesitter\query_predicates.lua"
+if (Test-Path $queryPredicates) {
+    $content = Get-Content $queryPredicates -Raw
+    if ($content -match 'vim\.treesitter\.get_node_text\(node, bufnr\):lower\(\)') {
+        Log-Info "Patching nvim-treesitter query_predicates.lua..."
+        $content = $content -replace `
+            'local injection_alias = vim\.treesitter\.get_node_text\(node, bufnr\):lower\(\)', `
+            "local ok, text = pcall(vim.treesitter.get_node_text, node, bufnr)`n  if not ok or not text then return end`n  local injection_alias = text:lower()"
+        Set-Content -Path $queryPredicates -Value $content -NoNewline -Encoding UTF8
+        Log-Success "Patched query_predicates.lua get_node_text nil guard"
+    } else {
+        Log-Info "query_predicates.lua already patched, skipping"
+    }
+} else {
+    Log-Warning "nvim-treesitter query_predicates.lua not found"
+}
