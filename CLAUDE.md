@@ -7,10 +7,12 @@ One-command Neovim IDE installer for **macOS ARM64**. Installs and configures a 
 ## File Structure
 
 ```
-setup-neovim-ide.sh    # Main installer (idempotent, ~600 lines)
-cleanup-neovim.sh      # Full uninstall script (destructive, requires confirmation)
-docs/design.md         # Architecture design (source of truth for module intent)
-docs/manual.md         # User-facing keyboard shortcut reference
+setup-neovim-ide.sh        # Main installer - macOS ARM64 (idempotent, ~600 lines)
+setup-neovim-ide-win.ps1   # Main installer - Windows 11 (idempotent, PowerShell)
+cleanup-neovim.sh          # Full uninstall - macOS (destructive, requires confirmation)
+cleanup-neovim-win.ps1     # Full uninstall - Windows 11 (destructive, requires confirmation)
+docs/design.md             # Architecture design (source of truth for module intent)
+docs/manual.md             # User-facing keyboard shortcut reference
 ```
 
 ## Architecture: setup-neovim-ide.sh
@@ -80,3 +82,13 @@ When refactoring, always run `bash -n` to catch syntax errors before committing.
 - Do not add a `--dry-run` flag or interactive menus — keep it a single linear script
 - Do not add `set -u` — some brew/nvim env vars may be unset and that is intentional
 - Do not change the backup strategy from `cp -r` to `mv` — copy is safer
+
+## Windows 11 Scripts (setup-neovim-ide-win.ps1 / cleanup-neovim-win.ps1)
+
+- Mirror the macOS version's 11-module structure in PowerShell
+- Use Scoop as package manager (user-level, no admin)
+- Neovim config path: `$env:LOCALAPPDATA\nvim` (not `~/.config/nvim`)
+- Data path: `$env:LOCALAPPDATA\nvim-data` (not `~/.local/share/nvim`)
+- avante.nvim build uses PowerShell command instead of `make`
+- Same Lua content as macOS version (embedded inline)
+- Same patches as macOS version (PowerShell string replacement instead of sed)
