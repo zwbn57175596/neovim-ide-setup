@@ -44,11 +44,18 @@ Log-Info "This script is idempotent and safe to run multiple times"
 
 # ── Prerequisite: Scoop ───────────────────────────────────────────────────────
 if (-not (Test-CommandExists "scoop")) {
-    Log-Error "Scoop is not installed."
-    Write-Host "  Install Scoop first:" -ForegroundColor Yellow
-    Write-Host "  irm get.scoop.sh | iex" -ForegroundColor Blue
-    Write-Host ""
-    exit 1
+    Log-Warning "Scoop is not installed. Installing now..."
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+    Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+    # Refresh PATH so scoop is available in this session
+    $env:PATH = "$env:USERPROFILE\scoop\shims;$env:PATH"
+    if (Test-CommandExists "scoop") {
+        Log-Success "Scoop installed successfully"
+    } else {
+        Log-Error "Scoop installation failed. Please install manually:"
+        Write-Host "  irm get.scoop.sh | iex" -ForegroundColor Blue
+        exit 1
+    }
 }
 
 # ── Prerequisite: Git (required by Scoop and NormalNvim clone) ────────────────
