@@ -315,6 +315,12 @@ return {
     event = "VeryLazy",
     version = false,
     build = "make",
+    init = function()
+      -- avante log.lua rejects vim.log.levels.WARN (3); remap to INFO before plugin loads
+      if vim.log.level == vim.log.levels.WARN then
+        vim.log.level = vim.log.levels.INFO
+      end
+    end,
     dependencies = {
       "nvim-lua/plenary.nvim",
       "MunifTanjim/nui.nvim",
