@@ -168,10 +168,12 @@ else
   curl -fL "$YZ_URL" -o /tmp/yazi.zip
   mkdir -p /tmp/yazi-extract
   unzip -o /tmp/yazi.zip -d /tmp/yazi-extract/
-  mv "/tmp/yazi-extract/yazi-${YZ_ARCH}-unknown-linux-gnu/yazi" "$YAZI_BIN"
-  chmod +x "$YAZI_BIN"
+  YZ_DIR="/tmp/yazi-extract/yazi-${YZ_ARCH}-unknown-linux-gnu"
+  mv "$YZ_DIR/yazi" "$YAZI_BIN"
+  mv "$YZ_DIR/ya" "$HOME/.local/bin/ya"
+  chmod +x "$YAZI_BIN" "$HOME/.local/bin/ya"
   rm -rf /tmp/yazi.zip /tmp/yazi-extract
-  log_success "yazi installed"
+  log_success "yazi + ya installed"
 fi
 
 # ==============================================================================

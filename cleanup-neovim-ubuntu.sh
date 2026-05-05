@@ -55,6 +55,7 @@ remove_if_exists "$HOME/.local/nvim"
 remove_if_exists "$HOME/.local/bin/nvim"
 remove_if_exists "$HOME/.local/bin/lazygit"
 remove_if_exists "$HOME/.local/bin/yazi"
+remove_if_exists "$HOME/.local/bin/ya"
 remove_if_exists "$HOME/.local/share/fonts/JetBrainsMonoNerd"
 
 # 刷新字体缓存
