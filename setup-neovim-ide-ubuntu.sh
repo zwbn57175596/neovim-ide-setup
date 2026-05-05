@@ -95,6 +95,8 @@ if [ ! -f "$HOME/.local/bin/fd" ]; then
 fi
 
 # Neovim (official tarball — apt version is too old)
+# Install full directory tree so runtime files (vim.uri, syntax/, etc.) are available.
+NVIM_DIR="$HOME/.local/nvim"
 NVIM_BIN="$HOME/.local/bin/nvim"
 if [ -f "$NVIM_BIN" ]; then
   log_success "Neovim already installed at $NVIM_BIN"
@@ -113,10 +115,11 @@ else
   log_info "Downloading $NVIM_URL ..."
   curl -fL "$NVIM_URL" -o /tmp/nvim-linux.tar.gz
   tar -xzf /tmp/nvim-linux.tar.gz -C /tmp/
-  mv "/tmp/nvim-linux-${NVIM_ARCH}/bin/nvim" "$NVIM_BIN"
-  chmod +x "$NVIM_BIN"
-  rm -rf "/tmp/nvim-linux-${NVIM_ARCH}" /tmp/nvim-linux.tar.gz
-  log_success "Neovim installed to $NVIM_BIN"
+  rm -rf "$NVIM_DIR"
+  mv "/tmp/nvim-linux-${NVIM_ARCH}" "$NVIM_DIR"
+  ln -sf "$NVIM_DIR/bin/nvim" "$NVIM_BIN"
+  rm -f /tmp/nvim-linux.tar.gz
+  log_success "Neovim installed to $NVIM_DIR (symlinked at $NVIM_BIN)"
 fi
 
 # lazygit (GitHub Releases)
