@@ -41,7 +41,7 @@ The script is **linear, not function-based**. Eleven sequential modules separate
 - **Non-destructive**: existing `~/.config/nvim` is backed up with a timestamp, never deleted.
 - **Inline Lua**: `5-ai-enhance.lua` is written by the script as a heredoc — do not split it into a separate file in this repo.
 - **No functions**: the script uses flat sequential code with `log_section` separators. Keep this style; do not refactor into function wrappers unless explicitly asked.
-- **macOS ARM64 only**: no Linux support, no Intel fallbacks.
+- **macOS ARM64 only**: this script targets Apple Silicon only. Linux and Windows are supported by separate platform-specific scripts.
 
 ## The Embedded Lua Plugin (Module 5)
 
@@ -86,7 +86,7 @@ Use `rtk` explicitly only when the hook is not active (e.g., in scripts, manual 
 
 ## What NOT to Do
 
-- Do not add Linux / Intel support without explicit request
+- Do not add new platform support (new OS, new architecture) without explicit request
 - Do not extract the Lua heredoc into a separate `.lua` file in this repo
 - Do not add a `--dry-run` flag or interactive menus — keep it a single linear script
 - Do not add `set -u` — some brew/nvim env vars may be unset and that is intentional
