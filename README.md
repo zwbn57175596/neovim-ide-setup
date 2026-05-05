@@ -14,22 +14,37 @@ b7XrACQ*9pwX46HK# neovim-ide-setup
 
 ## 快速开始
 
-### 前提
+### macOS ARM64 (Apple Silicon)
 
-- macOS ARM64 (Apple Silicon)
+**前提：**
 - 已安装 [Homebrew](https://brew.sh)
 - 已设置 `ANTHROPIC_API_KEY`（avante.nvim 需要）
 
-### 安装
-
 ```bash
-bash setup-neovim-ide.sh
+bash setup-neovim-ide-mac.sh
 ```
 
-### 清理（完全卸载重装）
+清理（完全卸载重装）：
 
 ```bash
-bash cleanup-neovim.sh
+bash cleanup-neovim-mac.sh
+```
+
+### Ubuntu Linux (x86_64 / ARM64)
+
+**前提：**
+- Ubuntu 22.04 LTS 或更高版本
+- 已设置 `ANTHROPIC_API_KEY`（avante.nvim 需要）
+- 需要 `sudo` 权限（apt 操作）
+
+```bash
+bash setup-neovim-ide-ubuntu.sh
+```
+
+清理（完全卸载重装）：
+
+```bash
+bash cleanup-neovim-ubuntu.sh
 ```
 
 ## 快捷键速查
@@ -76,10 +91,9 @@ Leader 键 = `空格`
 
 ```bash
 # Anthropic API Key（avante.nvim 使用）
+# macOS: export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+# Ubuntu: export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 export ANTHROPIC_API_KEY='your-key-here'
-
-# 项目 JDK（nvim-java 会自动下载 JDTLS 所需 JDK，此处只影响项目编译）
-export JAVA_HOME=$(/usr/libexec/java_home -v 17)
 ```
 
 将以上两行加入 `~/.zshrc` 以持久化。

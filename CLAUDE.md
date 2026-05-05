@@ -7,15 +7,17 @@ One-command Neovim IDE installer for **macOS ARM64**. Installs and configures a 
 ## File Structure
 
 ```
-setup-neovim-ide.sh        # Main installer - macOS ARM64 (idempotent, ~600 lines)
+setup-neovim-ide-mac.sh    # Main installer - macOS ARM64 (idempotent, ~600 lines)
+setup-neovim-ide-ubuntu.sh # Main installer - Ubuntu Linux (idempotent)
 setup-neovim-ide-win.ps1   # Main installer - Windows 11 (idempotent, PowerShell)
-cleanup-neovim.sh          # Full uninstall - macOS (destructive, requires confirmation)
+cleanup-neovim-mac.sh      # Full uninstall - macOS (destructive, requires confirmation)
+cleanup-neovim-ubuntu.sh   # Full uninstall - Ubuntu (destructive, requires confirmation)
 cleanup-neovim-win.ps1     # Full uninstall - Windows 11 (destructive, requires confirmation)
 docs/design.md             # Architecture design (source of truth for module intent)
 docs/manual.md             # User-facing keyboard shortcut reference
 ```
 
-## Architecture: setup-neovim-ide.sh
+## Architecture: setup-neovim-ide-mac.sh
 
 The script is **linear, not function-based**. Eleven sequential modules separated by `log_section` headers:
 
@@ -67,13 +69,20 @@ There is no automated test suite. To verify a change works:
 
 ```bash
 # Syntax check only (safe, no side effects)
-bash -n setup-neovim-ide.sh
+rtk bash -n setup-neovim-ide-mac.sh
+rtk bash -n setup-neovim-ide-ubuntu.sh
 
 # Full test requires a clean macOS ARM64 environment
-# Use cleanup-neovim.sh first, then re-run setup-neovim-ide.sh
+# Use cleanup-neovim-mac.sh first, then re-run setup-neovim-ide-mac.sh
 ```
 
-When refactoring, always run `bash -n` to catch syntax errors before committing.
+When refactoring, always run `rtk bash -n` to catch syntax errors before committing.
+
+## RTK (Token Optimization)
+
+All shell commands run in this project go through RTK automatically via the Claude Code hook. No manual `rtk` prefix is needed for `git`, `find`, `grep`, etc. — the hook handles rewriting transparently.
+
+Use `rtk` explicitly only when the hook is not active (e.g., in scripts, manual terminal sessions, or meta commands like `rtk gain` / `rtk discover`).
 
 ## What NOT to Do
 
@@ -82,6 +91,16 @@ When refactoring, always run `bash -n` to catch syntax errors before committing.
 - Do not add a `--dry-run` flag or interactive menus — keep it a single linear script
 - Do not add `set -u` — some brew/nvim env vars may be unset and that is intentional
 - Do not change the backup strategy from `cp -r` to `mv` — copy is safer
+
+## Ubuntu Scripts (setup-neovim-ide-ubuntu.sh / cleanup-neovim-ubuntu.sh)
+
+- Mirror the macOS version's 11-module structure in Bash
+- Use apt as package manager + GitHub Releases binaries for lazygit, yazi, Neovim
+- Neovim installed via official tarball to `~/.local/bin/nvim` (auto-detects x86_64 / arm64)
+- Font installed manually via curl + fc-cache (no brew cask)
+- `sed -i` (GNU sed syntax, no empty-string argument)
+- Same Lua content as macOS version (embedded inline)
+- Same patches as macOS version
 
 ## Windows 11 Scripts (setup-neovim-ide-win.ps1 / cleanup-neovim-win.ps1)
 
