@@ -134,7 +134,10 @@ else
     log_error "Unsupported architecture: $ARCH"
     exit 1
   fi
-  LG_URL="https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_Linux_${LG_ARCH}.tar.gz"
+  LG_VER=$(curl -fsSL "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" \
+    | grep '"tag_name"' | sed 's/.*"tag_name": *"v\([^"]*\)".*/\1/')
+  LG_URL="https://github.com/jesseduffield/lazygit/releases/download/v${LG_VER}/lazygit_${LG_VER}_Linux_${LG_ARCH}.tar.gz"
+  log_info "Downloading lazygit v${LG_VER}..."
   curl -fL "$LG_URL" -o /tmp/lazygit.tar.gz
   tar -xzf /tmp/lazygit.tar.gz -C /tmp/ lazygit
   mv /tmp/lazygit "$LAZYGIT_BIN"
