@@ -159,3 +159,87 @@ else
   rm -rf /tmp/yazi.zip /tmp/yazi-extract
   log_success "yazi installed"
 fi
+
+# ==============================================================================
+# Module 2: Language Runtimes
+# ==============================================================================
+log_section "Module 2: Setting Up Language Runtimes"
+
+# Java (project JDK — read from environment, not hardcoded)
+# nvim-java manages its own JDK for running JDTLS (via jdk.auto_install).
+# JAVA_HOME here only affects your project's compile/run toolchain.
+log_info "Checking Java environment..."
+if [ -n "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+  JAVA_VER=$("$JAVA_HOME/bin/java" -version 2>&1 | awk -F'"' '/version/{print $2}')
+  log_success "JAVA_HOME is set → $JAVA_HOME (Java $JAVA_VER)"
+elif command -v java &> /dev/null; then
+  JAVA_VER=$(java -version 2>&1 | awk -F'"' '/version/{print $2}')
+  log_success "java found in PATH (Java $JAVA_VER) — JAVA_HOME not set"
+  log_warning "Consider adding to ~/.bashrc: export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64"
+else
+  log_warning "No Java found in PATH or JAVA_HOME"
+  log_warning "Install a JDK for your project and set JAVA_HOME."
+  log_warning "Example (OpenJDK 17):  sudo apt install openjdk-17-jdk"
+  log_warning "Then add to ~/.bashrc: export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64"
+  log_info "Note: nvim-java will auto-download a separate JDK for JDTLS — no manual action needed."
+fi
+
+# Node.js (via NodeSource — Ubuntu apt ships outdated versions)
+log_info "Setting up Node.js..."
+if command -v node &> /dev/null; then
+  log_success "Node.js already installed"
+else
+  log_info "Installing Node.js via NodeSource (LTS)..."
+  curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+  sudo apt install -y nodejs
+  log_success "Node.js installed"
+fi
+
+# tree-sitter-cli (requires npm, installed after Node above)
+log_info "Setting up tree-sitter-cli..."
+if command -v tree-sitter &> /dev/null; then
+  log_success "tree-sitter-cli already installed"
+else
+  log_info "Installing tree-sitter-cli via npm..."
+  npm install -g tree-sitter-cli
+  log_success "tree-sitter-cli installed"
+fi
+
+# Python 3
+log_info "Setting up Python 3..."
+if command -v python3 &> /dev/null; then
+  log_success "Python 3 already installed"
+else
+  log_info "Installing Python 3..."
+  sudo apt install -y python3 python3-pip
+  log_success "Python 3 installed"
+fi
+
+# Yarn
+log_info "Setting up yarn..."
+if command -v yarn &> /dev/null; then
+  log_success "Yarn already installed"
+else
+  log_info "Installing yarn globally..."
+  npm install -g yarn
+  log_success "Yarn installed"
+fi
+
+# ==============================================================================
+# Module 3: Nerd Font
+# ==============================================================================
+log_section "Module 3: Installing Nerd Font"
+
+FONT_DIR="$HOME/.local/share/fonts/JetBrainsMonoNerd"
+if [ -d "$FONT_DIR" ] && ls "$FONT_DIR"/*.ttf &> /dev/null 2>&1; then
+  log_success "JetBrainsMono Nerd Font already installed"
+else
+  log_info "Downloading JetBrainsMono Nerd Font..."
+  mkdir -p "$FONT_DIR"
+  curl -L "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip" \
+    -o /tmp/JetBrainsMono.zip
+  unzip -o /tmp/JetBrainsMono.zip -d "$FONT_DIR/"
+  rm /tmp/JetBrainsMono.zip
+  fc-cache -fv
+  log_success "JetBrainsMono Nerd Font installed"
+fi
