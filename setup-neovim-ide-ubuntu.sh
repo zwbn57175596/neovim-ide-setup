@@ -111,7 +111,7 @@ else
   fi
   NVIM_URL="https://github.com/neovim/neovim/releases/latest/download/nvim-linux-${NVIM_ARCH}.tar.gz"
   log_info "Downloading $NVIM_URL ..."
-  curl -L "$NVIM_URL" -o /tmp/nvim-linux.tar.gz
+  curl -fL "$NVIM_URL" -o /tmp/nvim-linux.tar.gz
   tar -xzf /tmp/nvim-linux.tar.gz -C /tmp/
   mv "/tmp/nvim-linux-${NVIM_ARCH}/bin/nvim" "$NVIM_BIN"
   chmod +x "$NVIM_BIN"
@@ -135,7 +135,7 @@ else
     exit 1
   fi
   LG_URL="https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_Linux_${LG_ARCH}.tar.gz"
-  curl -L "$LG_URL" -o /tmp/lazygit.tar.gz
+  curl -fL "$LG_URL" -o /tmp/lazygit.tar.gz
   tar -xzf /tmp/lazygit.tar.gz -C /tmp/ lazygit
   mv /tmp/lazygit "$LAZYGIT_BIN"
   chmod +x "$LAZYGIT_BIN"
@@ -159,7 +159,7 @@ else
     exit 1
   fi
   YZ_URL="https://github.com/sxyazi/yazi/releases/latest/download/yazi-${YZ_ARCH}-unknown-linux-gnu.zip"
-  curl -L "$YZ_URL" -o /tmp/yazi.zip
+  curl -fL "$YZ_URL" -o /tmp/yazi.zip
   mkdir -p /tmp/yazi-extract
   unzip -o /tmp/yazi.zip -d /tmp/yazi-extract/
   mv "/tmp/yazi-extract/yazi-${YZ_ARCH}-unknown-linux-gnu/yazi" "$YAZI_BIN"
@@ -244,7 +244,7 @@ if [ -d "$FONT_DIR" ] && ls "$FONT_DIR"/*.ttf &> /dev/null 2>&1; then
 else
   log_info "Downloading JetBrainsMono Nerd Font..."
   mkdir -p "$FONT_DIR"
-  curl -L "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip" \
+  curl -fL "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip" \
     -o /tmp/JetBrainsMono.zip
   unzip -o /tmp/JetBrainsMono.zip -d "$FONT_DIR/"
   rm /tmp/JetBrainsMono.zip
