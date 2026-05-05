@@ -598,3 +598,110 @@ if [ -f "$QUERY_PREDICATES" ]; then
 else
   log_warning "nvim-treesitter query_predicates.lua not found"
 fi
+
+# ==============================================================================
+# Module 8: TreeSitter Parser Installation (Interactive)
+# ==============================================================================
+log_section "Module 8: TreeSitter Parser Installation"
+
+echo -e "${CYAN}Please manually install TreeSitter parsers in Neovim:${NC}"
+echo ""
+echo -e "${YELLOW}Run this command in Neovim:${NC}"
+echo -e "${BLUE}:TSInstall java javascript typescript python lua bash json yaml toml html css markdown${NC}"
+echo ""
+echo -e "${YELLOW}Or execute in terminal:${NC}"
+echo -e "${BLUE}nvim -c \"TSInstall java javascript typescript python lua bash json yaml toml html css markdown\" -c qa${NC}"
+echo ""
+read -p "Press Enter after installing TreeSitter parsers... "
+
+# ==============================================================================
+# Module 9: Mason Installation
+# ==============================================================================
+log_section "Module 9: Installing Mason Tools"
+
+log_info "Installing LSP servers and debug adapters via Mason..."
+timeout 300 nvim --headless \
+  -c "MasonInstall lua-language-server typescript-language-server pyright jdtls java-debug-adapter java-test debugpy js-debug-adapter codelldb bash-debug-adapter lombok-nightly spring-boot-tools" \
+  -c "sleep 30" \
+  -c "qa" 2>&1 | tail -5 || true
+
+log_success "Mason installation completed"
+
+# ==============================================================================
+# Module 10: Health Check
+# ==============================================================================
+log_section "Module 10: Health Check"
+
+log_info "Running Neovim health check..."
+echo ""
+
+HEALTH_OUTPUT=$(timeout 60 nvim --headless -c "checkhealth" -c "qa" 2>&1 || true)
+ERRORS=$(echo "$HEALTH_OUTPUT" | grep -E "ERROR|WARNING|error|warning" | grep -v "^$" | head -20 || true)
+
+if [ -z "$ERRORS" ]; then
+  log_success "Health check passed - no errors detected"
+else
+  echo "$ERRORS"
+fi
+
+# ==============================================================================
+# Module 11: Summary and Quick Reference
+# ==============================================================================
+log_section "Module 11: Setup Complete!"
+
+echo -e "${GREEN}✓ Neovim IDE setup completed successfully!${NC}\n"
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}Quick Reference - Keyboard Shortcuts:${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+
+echo -e "${YELLOW}AI Shortcuts (Claude Code):${NC}"
+echo -e "  ${BLUE}<leader>ac${NC}  - Open Claude Code in float window"
+echo -e "  ${BLUE}<leader>av${NC}  - Open Claude Code in vertical split\n"
+
+echo -e "${YELLOW}Java Development:${NC}"
+echo -e "  ${BLUE}<leader>jo${NC}  - Run Java Application"
+echo -e "  ${BLUE}<leader>js${NC}  - Stop Java Application"
+echo -e "  ${BLUE}<leader>jt${NC}  - Test Current Method"
+echo -e "  ${BLUE}<leader>jT${NC}  - Test Current Class"
+echo -e "  ${BLUE}<leader>jD${NC}  - Config DAP (debug regular app, then <F5>)"
+echo -e "  ${BLUE}<leader>jd${NC}  - Debug Test Method"
+echo -e "  ${BLUE}<leader>jp${NC}  - Open Java Profiler\n"
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}Configuration Files:${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+
+echo -e "  ${BLUE}Main Config:${NC}       $NVIM_CONFIG_DIR/init.lua"
+echo -e "  ${BLUE}AI Enhancement:${NC}   $AI_ENHANCE_FILE"
+echo -e "  ${BLUE}Backup Location:${NC}  $HOME/.config/nvim.bak.*\n"
+
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}Next Steps:${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+
+echo -e "  1. Set your Anthropic API key:"
+echo -e "     ${BLUE}export ANTHROPIC_API_KEY='your-key-here'${NC}\n"
+
+echo -e "  2. Set JAVA_HOME to your project's JDK (any version):"
+echo -e "     ${BLUE}sudo apt install openjdk-17-jdk${NC}"
+echo -e "     ${BLUE}export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64${NC}"
+echo -e "     Add to ~/.bashrc to persist across sessions."
+echo -e "     ${CYAN}Note: nvim-java auto-manages a separate JDK for JDTLS —${NC}"
+echo -e "     ${CYAN}JAVA_HOME only affects your project compile/run toolchain.${NC}\n"
+
+echo -e "  3. Java debug workflow:"
+echo -e "     ${BLUE}<leader>jD${NC}  Config DAP  →  ${BLUE}<F9>${NC}  Set breakpoint  →  ${BLUE}<F5>${NC}  Start debug\n"
+
+echo -e "  4. Launch Neovim:"
+echo -e "     ${BLUE}nvim${NC}\n"
+
+echo -e "  5. Verify setup with health check:"
+echo -e "     ${BLUE}:checkhealth${NC}\n"
+
+echo -e "  6. Install additional TreeSitter parsers as needed:"
+echo -e "     ${BLUE}:TSInstall <language>${NC}\n"
+
+echo -e "${GREEN}Happy coding!${NC}\n"
+
+exit 0
