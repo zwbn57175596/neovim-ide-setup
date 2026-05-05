@@ -22,11 +22,19 @@ log_warning() { echo -e "${YELLOW}⚠ $1${NC}"; }
 log_error()   { echo -e "${RED}✗ $1${NC}"; }
 log_info()    { echo -e "${CYAN}ℹ $1${NC}"; }
 
-# Prereq checks
-for cmd in curl git unzip sudo; do
-  if ! command -v "$cmd" &> /dev/null; then
-    echo "Error: '$cmd' is required but not installed. Please install it first."
-    exit 1
+# Bootstrap: sudo is the only hard requirement (needed to install everything else)
+if ! command -v sudo &> /dev/null; then
+  echo "Error: 'sudo' is not available. Please install sudo or run as root."
+  exit 1
+fi
+
+# Auto-install bootstrap tools that may be missing on a fresh Ubuntu install
+echo "Checking bootstrap dependencies..."
+sudo apt update -qq
+for pkg in curl git unzip fontconfig; do
+  if ! dpkg -l "$pkg" &> /dev/null 2>&1; then
+    echo "Installing $pkg..."
+    sudo apt install -y "$pkg"
   fi
 done
 
