@@ -1,6 +1,6 @@
 b7XrACQ*9pwX46HK# neovim-ide-setup
 
-一键安装 Neovim IDE 开发环境（macOS ARM64）。
+一键安装 Neovim IDE 开发环境（macOS ARM64 / Ubuntu Linux / Windows 11）。
 
 基于 [NormalNvim](https://github.com/NormalNvim/NormalNvim) 发行版，集成 Java 全链路开发支持（LSP / DAP / 测试 / 热重载）和 AI 编程辅助（avante.nvim + Claude Code CLI）。
 
@@ -96,4 +96,4 @@ Leader 键 = `空格`
 export ANTHROPIC_API_KEY='your-key-here'
 ```
 
-将以上两行加入 `~/.zshrc` 以持久化。
+将上述配置加入你的 shell 配置文件以持久化（macOS 用 `~/.zshrc`，Ubuntu 用 `~/.bashrc`）。
