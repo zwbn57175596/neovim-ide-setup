@@ -552,3 +552,49 @@ return {
 LUAEOF
 
 log_success "AI enhancement configuration written to $AI_ENHANCE_FILE"
+
+# ==============================================================================
+# Module 6: First Launch - Install Plugins
+# ==============================================================================
+log_section "Module 6: Installing Lazy Plugins (Headless)"
+
+log_info "Launching Neovim to install plugins (this may take a moment)..."
+timeout 300 nvim --headless "+Lazy! sync" +qa 2>&1 | tail -10 || true
+log_success "Plugin installation completed"
+
+# ==============================================================================
+# Module 7: Patch aerial.nvim and nvim-treesitter for Neovim 0.12 Compatibility
+# ==============================================================================
+log_section "Module 7: Patching for Neovim 0.12 Compatibility"
+
+AERIAL_HELPERS="$HOME/.local/share/nvim/lazy/aerial.nvim/lua/aerial/backends/treesitter/helpers.lua"
+
+if [ -f "$AERIAL_HELPERS" ]; then
+  log_info "Patching aerial.nvim helpers.lua..."
+
+  # Patch: node:start() -> node:range()
+  sed -i 's/local row, col = start_node:start()/local row, col = start_node:range()/' "$AERIAL_HELPERS"
+  log_success "Patched node:start() -> node:range()"
+
+  # Patch: node:end_() -> node:range()
+  sed -i 's/local end_row, end_col = end_node:end_()/local _, _, end_row, end_col = end_node:range()/' "$AERIAL_HELPERS"
+  log_success "Patched node:end_() -> node:range()"
+else
+  log_warning "aerial.nvim not found at $AERIAL_HELPERS (may not be installed yet)"
+fi
+
+# Patch: nvim-treesitter query_predicates.lua for Neovim 0.12.1
+QUERY_PREDICATES="$HOME/.local/share/nvim/lazy/nvim-treesitter/lua/nvim-treesitter/query_predicates.lua"
+if [ -f "$QUERY_PREDICATES" ]; then
+  if grep -q 'vim.treesitter.get_node_text(node, bufnr):lower()' "$QUERY_PREDICATES"; then
+    log_info "Patching nvim-treesitter query_predicates.lua..."
+    sed -i \
+      's/local injection_alias = vim.treesitter.get_node_text(node, bufnr):lower()/local ok, text = pcall(vim.treesitter.get_node_text, node, bufnr)\n  if not ok or not text then return end\n  local injection_alias = text:lower()/' \
+      "$QUERY_PREDICATES"
+    log_success "Patched query_predicates.lua get_node_text nil guard"
+  else
+    log_info "query_predicates.lua already patched, skipping"
+  fi
+else
+  log_warning "nvim-treesitter query_predicates.lua not found"
+fi
