@@ -257,7 +257,7 @@ return {
       ensure_installed = {
         "lua_ls",
         "ts_ls",
-        "pyright",
+        "ruff",
       },
     },
   },
@@ -538,7 +538,7 @@ log_section "Module 9: Installing Mason Tools"
 
 log_info "Installing LSP servers and debug adapters via Mason..."
 timeout 300 nvim --headless \
-  -c "MasonInstall lua-language-server typescript-language-server pyright jdtls java-debug-adapter java-test debugpy js-debug-adapter codelldb bash-debug-adapter lombok-nightly spring-boot-tools" \
+  -c "MasonInstall lua-language-server typescript-language-server ruff jdtls java-debug-adapter java-test debugpy js-debug-adapter codelldb bash-debug-adapter lombok-nightly spring-boot-tools" \
   -c "sleep 30" \
   -c "qa" 2>&1 | tail -5 || true
 
