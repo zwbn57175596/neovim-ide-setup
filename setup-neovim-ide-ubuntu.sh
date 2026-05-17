@@ -211,13 +211,17 @@ else
   log_success "Node.js installed"
 fi
 
+NPM_GLOBAL_PREFIX="$HOME/.local"
+mkdir -p "$NPM_GLOBAL_PREFIX/bin" "$NPM_GLOBAL_PREFIX/lib"
+log_info "npm global CLI prefix: $NPM_GLOBAL_PREFIX"
+
 # tree-sitter-cli (requires npm, installed after Node above)
 log_info "Setting up tree-sitter-cli..."
 if command -v tree-sitter &> /dev/null; then
   log_success "tree-sitter-cli already installed"
 else
-  log_info "Installing tree-sitter-cli via npm..."
-  npm install -g tree-sitter-cli
+  log_info "Installing tree-sitter-cli via npm into user directory..."
+  npm install -g --prefix "$NPM_GLOBAL_PREFIX" tree-sitter-cli
   log_success "tree-sitter-cli installed"
 fi
 
@@ -236,8 +240,8 @@ log_info "Setting up yarn..."
 if command -v yarn &> /dev/null; then
   log_success "Yarn already installed"
 else
-  log_info "Installing yarn globally..."
-  npm install -g yarn
+  log_info "Installing yarn via npm into user directory..."
+  npm install -g --prefix "$NPM_GLOBAL_PREFIX" yarn
   log_success "Yarn installed"
 fi
 

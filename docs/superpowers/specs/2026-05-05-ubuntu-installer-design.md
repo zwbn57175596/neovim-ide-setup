@@ -48,7 +48,7 @@ Use `apt install` instead of `brew install`. Package name differences:
 | wget | `wget` | `wget` |
 | lazygit | `brew install lazygit` | Download binary from GitHub Releases |
 | yazi | `brew install yazi` | Download binary from GitHub Releases |
-| tree-sitter | `brew install tree-sitter` | `npm install -g tree-sitter-cli` (after Node install in Module 2) |
+| tree-sitter | `brew install tree-sitter` | `npm install -g --prefix "$HOME/.local" tree-sitter-cli` (after Node install in Module 2) |
 
 **Neovim AppImage install** (part of Module 1):
 ```bash
@@ -78,7 +78,8 @@ Ensure `~/.local/bin` is on `$PATH` (add to `~/.bashrc` / `~/.zshrc` if missing)
 - **Java:** Remove `/usr/libexec/java_home` call. Check `$JAVA_HOME` and `which java`. If missing, advise: `sudo apt install openjdk-17-jdk` and `export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64`.
 - **Node.js:** Use NodeSource setup script (Ubuntu apt ships outdated Node). Install via `curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt install -y nodejs`.
 - **Python 3:** `sudo apt install -y python3 python3-pip` (usually pre-installed on Ubuntu).
-- **Yarn:** `npm install -g yarn` (same as macOS).
+- **npm global CLI prefix:** Use `~/.local` so npm-installed CLIs do not require root and are available through the existing `~/.local/bin` PATH entry.
+- **Yarn:** `npm install -g --prefix "$HOME/.local" yarn`.
 
 **Module 3 — Nerd Font**
 
