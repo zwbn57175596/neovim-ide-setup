@@ -20,6 +20,14 @@ b7XrACQ*9pwX46HK# neovim-ide-setup
 - 已安装 [Homebrew](https://brew.sh)
 - 已设置 `ANTHROPIC_API_KEY`（avante.nvim 需要）
 
+无需 clone 仓库，直接运行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zwbn57175596/neovim-ide-setup/main/setup-neovim-ide-mac.sh | bash
+```
+
+或 clone 后本地运行：
+
 ```bash
 bash setup-neovim-ide-mac.sh
 ```
@@ -37,6 +45,14 @@ bash cleanup-neovim-mac.sh
 - 已设置 `ANTHROPIC_API_KEY`（avante.nvim 需要）
 - 需要 `sudo` 权限（apt 操作）
 
+无需 clone 仓库，直接运行：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zwbn57175596/neovim-ide-setup/main/setup-neovim-ide-ubuntu.sh | bash
+```
+
+或 clone 后本地运行：
+
 ```bash
 bash setup-neovim-ide-ubuntu.sh
 ```
@@ -45,6 +61,31 @@ bash setup-neovim-ide-ubuntu.sh
 
 ```bash
 bash cleanup-neovim-ubuntu.sh
+```
+
+### Windows 11
+
+**前提：**
+- PowerShell 5.1 或更高版本
+- 已安装 [Scoop](https://scoop.sh)
+- 已设置 `ANTHROPIC_API_KEY`（avante.nvim 需要）
+
+无需 clone 仓库，直接运行（PowerShell）：
+
+```powershell
+irm https://raw.githubusercontent.com/zwbn57175596/neovim-ide-setup/main/setup-neovim-ide-win.ps1 | iex
+```
+
+或 clone 后本地运行：
+
+```powershell
+.\setup-neovim-ide-win.ps1
+```
+
+清理（完全卸载重装）：
+
+```powershell
+.\cleanup-neovim-win.ps1
 ```
 
 ## 快捷键速查
