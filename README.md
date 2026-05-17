@@ -67,7 +67,7 @@ bash cleanup-neovim-ubuntu.sh
 
 **前提：**
 - PowerShell 5.1 或更高版本
-- 已安装 [Scoop](https://scoop.sh)
+- [Scoop](https://scoop.sh)（未安装时脚本将自动安装）
 - 已设置 `ANTHROPIC_API_KEY`（avante.nvim 需要）
 
 无需 clone 仓库，直接运行（PowerShell）：
